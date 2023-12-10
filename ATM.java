@@ -80,7 +80,25 @@ public class ATM {
         String accountName = scanner.nextLine();
 
         System.out.print("Enter account number: ");
-        String accountNumber = scanner.nextLine();
+        //String accountNumber = scanner.nextLine();
+        try {
+            String accountNumber = scanner.nextLine();
+            int checkAccountNumber = Integer.parseInt(accountNumber);
+
+            //int accountNumber = Integer.parseInt(scanner.nextLine());
+            if (checkAccountNumber < 0) {
+                throw new IllegalArgumentException("Account number cannot be negative.");
+            }
+
+            System.out.print("Enter PIN: ");
+            String pin = scanner.nextLine();
+
+            int checkPin = Integer.parseInt(pin);
+
+             if (checkPin < 0) {
+                throw new IllegalArgumentException("Pin cannot be negative.");
+            }
+
 
         //negative account number
 
@@ -91,16 +109,19 @@ public class ATM {
             printAccountDetails(existingAccount);
             return;
         }
-
-        System.out.print("Enter PIN: ");
-        String pin = scanner.nextLine();
+   
 
         System.out.print("Enter initial deposit amount: ");
         double balance = Double.parseDouble(scanner.nextLine());
 
-        Account account = new Account(accountName,accountNumber, pin, balance, new Date());
+        Account account = new Account(accountName, accountNumber, pin, balance, new Date());
         bank.addAccount(account);
         System.out.println("Account created successfully!");
+        }  
+        catch (IllegalArgumentException e) {
+            System.out.println(e.getMessage());
+            showMenu(); // Restart account creation process
+        }
     }
 
     private void showAccountMenu(Account account) {
