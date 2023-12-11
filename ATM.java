@@ -219,7 +219,6 @@ public class ATM {
        
         if(account.deposit(amount))
         {
-            double currentBalance = account.getBalance();
             account.addTransaction(new Transaction(new Date(), "  Deposit  ", 0, account.getBalance() ));
             System.out.println("Deposit successful. Your new balance is: $" + account.getBalance());
         }
@@ -241,10 +240,9 @@ public class ATM {
         if (account.getPin().equals(currentPin)) {
 
             if (account.withdraw(amount)) {
-            double currentBalance = account.getBalance();
             System.out.println();
             System.out.println("Withdrawal successful!");
-            account.addTransaction(new Transaction(new Date(), " Withdrawal", -amount, currentBalance - amount));
+            account.addTransaction(new Transaction(new Date(), " Withdrawal", -amount,  account.getBalance()));
             System.out.println("Withdrawal successful. Your new balance is: $" + account.getBalance());
             System.out.println();
             return;
