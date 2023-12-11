@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Date;
 
@@ -6,9 +7,13 @@ public class Account {
 
     private double dailyWithdrawalLimit;
     private double dailyDepositLimit;
+    private double lastDeposit;
+    private double lastWithdrawal;
     private double remainingWithdrawalLimit;
     private double remainingDepositLimit;
     private Date dateCreated;
+    private Date balanceUpdated;
+    private Date withdrawUpdated;
     private String accountName;
 
      // Transaction history data
@@ -31,10 +36,11 @@ public class Account {
 
         this.dateCreated = dateCreated;
 
-        this.dailyWithdrawalLimit = 500; // Set default withdrawal limit
-        this.dailyDepositLimit = 5000; // Set default deposit limit
+        this.dailyWithdrawalLimit = 1000; // Set default withdrawal limit
+        this.dailyDepositLimit = 10000; // Set default deposit limit
         this.remainingWithdrawalLimit = dailyWithdrawalLimit;
         this.remainingDepositLimit = dailyDepositLimit;
+        this.transactions = new ArrayList<>();
     }
 
 
@@ -70,6 +76,9 @@ public class Account {
 
     public boolean deposit(double amount) {
         if (amount > remainingDepositLimit) {
+            {
+                System.out.println("Daily Deposit Limit for your account is $10,000");
+            }
             return false; // Exceeding deposit limit
         }
 
@@ -77,15 +86,17 @@ public class Account {
             return false; // Invalid deposit amount
         }
 
-        remainingDepositLimit -= amount;
-
         balance += amount;
+        remainingDepositLimit -= amount;
+        balanceUpdated = new Date();
+        lastDeposit = amount;
 
         return true;
     }
 
     public boolean withdraw(double amount) {
         if (amount > remainingWithdrawalLimit) {
+            System.out.println("Daily withdrawal Limit for your account is $1000");
             return false; // Exceeding withdrawal limit
         }
         if (amount <= 0 || amount > balance) {
@@ -94,31 +105,28 @@ public class Account {
         remainingWithdrawalLimit -= amount;
         balance -= amount;
 
+        withdrawUpdated = new Date();
+        lastWithdrawal = amount;
+
         return true;
     }
 
     public void printAccountDetails(Account account) {
-        System.out.println("Bank Statement");
-        System.out.print("    Account Number     |       Amount    |      Balance      |      Date    " + account.getAccountNumber());
+
+        if(account.getAccountNumber()== "0000")
+        return;
         System.out.println();
-         System.out.print("    " + account.getAccountNumber() + "    " +account.getBalance() +  "    " +account.getDateCreated() +  "    " + "    ");
+        System.out.println("Bank Statement");
+        System.out.println("Account Name : " +  account.getAccountName());
+        System.out.println("Account Number : " +  account.getAccountNumber());
+        System.out.println("Account Balance : " +  account.getBalance() + "Last Deposit amount: " +lastDeposit+ " Received at : " +balanceUpdated);
+        System.out.println("Last Deposit Value : " +  account.getBalance() + "Last Withdrawal amount: " + lastWithdrawal + "withdrawn at : " + withdrawUpdated);
+        System.out.println("Account Created Date : " + account.getDateCreated());
+        System.out.println();
         // System.out.println("Balance: $" + account.getBalance());
         // System.out.println("Date Created: " + account.getDateCreated());
     }
     
-    
-    //  public String printMiniStatement(Account account) {
-    //         StringBuilder miniStatement = new StringBuilder();
-    //         miniStatement.append("Mini Statement").append("\n");
-    //         miniStatement.append("Account Number: ").append(account.getAccountNumber()).append("\n");
-    //         miniStatement.append("|---|---|---|---|");
-
-    //         int numTransactions = Math.min(transactions.size(), 5); // Display last 5 transactions
-    //         for (int i = transactions.size() - 1; i >= transactions.size() - numTransactions; i--) {
-    //             miniStatement.append("\n").append(transactions.get(i).toString());
-    //         }
-    //         return miniStatement.toString();
-    //     }
 
 
     public boolean isBlocked() {
@@ -131,13 +139,33 @@ public class Account {
         return blockedUntil;
     }
 
-    public
- 
-void
- 
-setBlockedUntil(Date blockedUntil)
+    public void setBlockedUntil(Date blockedUntil)
  
 {
         this.blockedUntil = blockedUntil;
     }
+
+public void addTransaction(Transaction transaction)
+ 
+{
+    this.transactions.add(transaction);
+}
+
+public List<Transaction> getTransactions()
+ 
+{
+    return Collections.unmodifiableList(transactions); // Return unmodifiable list for safety
+}
+
+public void printTransactionHistory(Account account) {
+    System.out.println("Transaction History:");
+    System.out.println();
+    System.out.println("|            Date              |    Description    |      Amount      |      Balance      |");
+    System.out.println("|------------------------------|-------------------|------------------|-------------------|");
+
+    for (Transaction transaction : account.getTransactions()) {
+        //System.out.println(transaction.toString());
+        System.out.println(transaction.getDate() + "       " + transaction.getDescription()  + "             "  + transaction.getAmount()  + "            "  + transaction.getBalance());
+    }
+}
 }

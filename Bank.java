@@ -28,7 +28,7 @@ public class Bank {
         return accounts.containsKey(accountNumber);
     }
 
-    public boolean transferFunds(String sourceAccountNumber, String destinationAccountNumber, double amount) {
+    public boolean transferFunds(String sourceAccountNumber, String destinationAccountNumber, double amount, double balance) {
         Account sourceAccount = getAccount(sourceAccountNumber);
         Account destinationAccount = getAccount(destinationAccountNumber);
 
@@ -39,8 +39,22 @@ public class Bank {
         if (!sourceAccount.withdraw(amount)) {
             return false; // Insufficient funds
         }
+        sourceAccount.addTransaction(new Transaction(new Date(), "Transfer to: " + destinationAccount.getAccountNumber(), -amount, balance));
+        destinationAccount.addTransaction(new Transaction(new Date(), "Transfer from: " + sourceAccount.getAccountNumber(), amount, balance));
 
         destinationAccount.deposit(amount);
+
+
         return true; // Transfer successful
+        
+}
+public void printAllAccountDetails() {
+    for (Account account : accounts.values()) {
+        System.out.println("Account Number: " + account.getAccountNumber());
+        System.out.println("Account Name: " + account.getAccountName());
+        System.out.println("Balance: $" + account.getBalance());
+        System.out.println("Date Created: " + account.getDateCreated());
+        System.out.println(); // Add space between accounts
+    }
 }
 }

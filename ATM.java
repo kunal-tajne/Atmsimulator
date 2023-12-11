@@ -5,6 +5,7 @@ public class ATM {
 
     private Bank bank;
     private final Scanner scanner = new Scanner(System.in);
+    int loginAttemptsRemaining = 3;
 
     public ATM(Bank bank) {
         this.bank = bank;
@@ -21,25 +22,36 @@ public class ATM {
                     createAccount();
                     break;
                 case 3:
+                    System.out.println();
                     System.out.println("Thank you for using our ATM!");
                     System.exit(0);
                 default:
+                    System.out.println();  
                     System.out.println("Invalid choice. Please try again.");
             }
         }
     }
 
     private int showMenu() {
+        System.out.println();
         System.out.println("1. Login");
         System.out.println("2. Create Account");
         System.out.println("3. Exit");
+        System.out.println();
         System.out.print("Enter your choice: ");
         return Integer.parseInt(scanner.nextLine());
     }
 
     private void login() {
+         try {
         System.out.print("Enter account number: ");
         String accountNumber = scanner.nextLine();
+
+        if (!bank.isAccountExists(accountNumber))
+            {
+                throw new IllegalArgumentException("Account account number does not exist.");
+            }
+
         System.out.print("Enter PIN: ");
         String pin = scanner.nextLine();
 
@@ -49,7 +61,6 @@ public class ATM {
         }
 
         // Track login attempts
-        int loginAttemptsRemaining = 3;
         while (!bank.login(accountNumber, pin) && loginAttemptsRemaining > 0) {
             loginAttemptsRemaining--;
             System.out.println("Incorrect PIN. Please try again. You have " + loginAttemptsRemaining + " attempts remaining.");
@@ -64,6 +75,12 @@ public class ATM {
 
         showAccountMenu(bank.getAccount(accountNumber));
     }
+    catch (IllegalArgumentException e) {
+            System.out.println();
+            System.out.println(e.getMessage());
+            showMenu(); // Restart account creation process
+        }
+    }
 
     private boolean isAccountBlocked(Account account) {
         Date blockedUntil = account.getBlockedUntil();
@@ -75,19 +92,30 @@ public class ATM {
     }
 
     private void createAccount() {
-
-        System.out.print("Enter account name: ");
-        String accountName = scanner.nextLine();
-
-        System.out.print("Enter account number: ");
+         
+        System.out.println();
         //String accountNumber = scanner.nextLine();
         try {
+            System.out.print("Enter account name: ");
+            String accountName = scanner.nextLine();
+
+            if (bank.isAccountExists(accountName))
+            {
+                throw new IllegalArgumentException("Account Name already exist.");
+            }
+
+            System.out.print("Enter account number: ");
             String accountNumber = scanner.nextLine();
             int checkAccountNumber = Integer.parseInt(accountNumber);
 
             //int accountNumber = Integer.parseInt(scanner.nextLine());
             if (checkAccountNumber < 0) {
                 throw new IllegalArgumentException("Account number cannot be negative.");
+            }
+
+            if (bank.isAccountExists(accountNumber))
+            {
+                throw new IllegalArgumentException("Account Number already exist.");
             }
 
             System.out.print("Enter PIN: ");
@@ -102,13 +130,13 @@ public class ATM {
 
         //negative account number
 
-        if (bank.isAccountExists(accountNumber)) {
-            System.out.println("Account number already exists.");
-            System.out.println("Existing account details:");
-            Account existingAccount = bank.getAccount(accountNumber);
-            printAccountDetails(existingAccount);
-            return;
-        }
+        // if (bank.isAccountExists(accountNumber)) {
+        //     System.out.println("Account number already exists.");
+        //     System.out.println("Existing account details:");
+        //     Account existingAccount = bank.getAccount(accountNumber);
+        //     printAccountDetails(existingAccount);
+        //     return;
+        // }
    
 
         System.out.print("Enter initial deposit amount: ");
@@ -116,12 +144,14 @@ public class ATM {
 
         Account account = new Account(accountName, accountNumber, pin, balance, new Date());
         bank.addAccount(account);
+        System.out.println();
         System.out.println("Account created successfully!");
         }  
         catch (IllegalArgumentException e) {
             System.out.println(e.getMessage());
             showMenu(); // Restart account creation process
         }
+        
     }
 
     private void showAccountMenu(Account account) {
@@ -149,6 +179,17 @@ public class ATM {
                 case 7:
                     System.out.println("Thank you for using our ATM!");
                     return;
+                case 8:
+                    printAccountDetails(account);
+                    printTransactionHistory(account);
+                    break;
+                case 9:
+                    if (isAdmin(account)) {
+                        bank.printAllAccountDetails();
+                    } else {
+                        System.out.println("Access denied: This feature is only available for the admin account.");
+                    }
+                    break;
                 default:
                     System.out.println("Invalid choice. Please try again.");
             }
@@ -156,6 +197,7 @@ public class ATM {
     }
 
     private int showAccountMenuOptions() {
+        System.out.println();
         System.out.println("1. Check Balance");
         System.out.println("2. Deposit");
         System.out.println("3. Withdraw");
@@ -174,19 +216,68 @@ public class ATM {
     private void deposit(Account account) {
         System.out.print("Enter deposit amount: ");
         double amount = Double.parseDouble(scanner.nextLine());
-        account.deposit(amount);
-        System.out.println("Deposit successful!");
+       
+        if(account.deposit(amount))
+        {
+            double currentBalance = account.getBalance();
+            account.addTransaction(new Transaction(new Date(), "  Deposit  ", 0, account.getBalance() ));
+            System.out.println("Deposit successful. Your new balance is: $" + account.getBalance());
+        }
+
+        else
+            System.out.println("Try Again");
+        
+       
     }
 
     private void withdraw(Account account) {
         System.out.print("Enter withdrawal amount: ");
         double amount = Double.parseDouble(scanner.nextLine());
-        if (account.withdraw(amount)) {
+
+        // 
+        System.out.print("Enter PIN: ");
+        String currentPin = scanner.nextLine();
+
+        if (account.getPin().equals(currentPin)) {
+
+            if (account.withdraw(amount)) {
+            double currentBalance = account.getBalance();
+            System.out.println();
             System.out.println("Withdrawal successful!");
-        } else {
-            System.out.println("Insufficient funds.");
+            account.addTransaction(new Transaction(new Date(), " Withdrawal", -amount, currentBalance - amount));
+            System.out.println("Withdrawal successful. Your new balance is: $" + account.getBalance());
+            System.out.println();
+            return;
+            }
+            else {
+            System.out.println();
+            System.out.println("Insufficient funds or Greater than your withdrawal limit i.e $1000");
+            System.out.println(); 
         }
-    }
+         return;
+        }
+        else
+        {
+            try {
+                loginAttemptsRemaining--;
+                
+                System.out.println();
+                System.out.println("Wrong Pin! " +loginAttemptsRemaining + " Chances Remaining");
+
+                if (loginAttemptsRemaining == 0) {
+                    
+                throw new IllegalArgumentException("Invalid Pin. Account blocked for 24 hours due to multiple incorrect login attempts.");
+            }
+            }
+            catch(IllegalArgumentException e)
+            {
+                 System.out.println(e.getMessage());
+                 showMenu();
+            }
+                
+        }
+            
+        } 
 
     private void changePin(Account account) {
         System.out.print("Enter old PIN: ");
@@ -202,10 +293,6 @@ public class ATM {
     }
 
 
-    // private void printMiniStatement(Account account) {
-    //     account.printMiniStatement(account);
-    // }
-
      private void printAccountDetails(Account account) {
         account.printAccountDetails(account);
     }
@@ -218,38 +305,15 @@ public class ATM {
         System.out.print("Enter transfer amount: ");
         double amount = Double.parseDouble(scanner.nextLine());
 
-        if (!bank.transferFunds(account.getAccountNumber(), recipientAccountNumber, amount)) {
+        if (!bank.transferFunds(account.getAccountNumber(), recipientAccountNumber, amount, account.getBalance())) {
             System.out.println("Transfer failed. Please try again.");
         } else {
             System.out.println("Transfer successful!");
         }
     }
 
-
-    // Data Structures
-
-public static int binarySearch(int[] array, int target)
- 
-{
-        int low = 0;
-        int high = array.length - 1;
-
-        while (low <= high) {
-            int mid = (low + high) / 2;
-
-            
-if (array[mid] == target) {
-                return mid;
-            } else
- 
-if (array[mid] > target) {
-                high = mid - 1;
-            } else {
-                low = mid + 1;
-            }
-        }
-
-        return -1; // Target not found
+    private boolean isAdmin(Account account) {
+        return account.getAccountName().equalsIgnoreCase("admin");
     }
 
 
@@ -259,6 +323,9 @@ if (array[mid] > target) {
         atm.start();
     }
 
-    
+    private void printTransactionHistory(Account account)
+    {
+        account.printTransactionHistory(account);
+    }
 
 }
