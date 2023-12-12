@@ -223,11 +223,12 @@ public class AccountMenuGUI extends JFrame {
             }
             
         }
-        else if(currAccount.loginAttemptsRemaining == 0)
+        else if(currAccount.loginAttemptsRemaining == 1)
         {
             String message = "Account blocked for 24 hours due to multiple incorrect login attempts.";
             JOptionPane.showMessageDialog(null, message, "Account Blocked", JOptionPane.INFORMATION_MESSAGE);
             currBank.getAccount(accountNumber).setBlockedUntil(new Date(System.currentTimeMillis() + 86400000));
+            logout();
             return;
         }
         else
@@ -265,11 +266,12 @@ public class AccountMenuGUI extends JFrame {
             JOptionPane.showMessageDialog(null, message, "Pin Changed", JOptionPane.INFORMATION_MESSAGE);
         }
     
-        else if(currAccount.loginAttemptsRemaining == 0)
+        else if(currAccount.loginAttemptsRemaining == 1)
         {
             String message = "Account blocked for 24 hours due to multiple incorrect login attempts.";
             JOptionPane.showMessageDialog(null, message, "Account Blocked", JOptionPane.INFORMATION_MESSAGE);
             currBank.getAccount(accountNumber).setBlockedUntil(new Date(System.currentTimeMillis() + 86400000));
+            logout();
             return;
         }
         else
@@ -309,11 +311,12 @@ public class AccountMenuGUI extends JFrame {
             resultArea.setText("Transfer Successfull. Remaining Balance : " + currAccount.getBalance());
         }
         }
-         else if(currAccount.loginAttemptsRemaining == 0)
+         else if(currAccount.loginAttemptsRemaining == 1)
         {
             String message = "Account blocked for 24 hours due to multiple incorrect login attempts.";
             JOptionPane.showMessageDialog(null, message, "Account Blocked", JOptionPane.INFORMATION_MESSAGE);
             currBank.getAccount(accountNumber).setBlockedUntil(new Date(System.currentTimeMillis() + 86400000));
+            logout();
             return;
         }
         else
@@ -344,7 +347,8 @@ public class AccountMenuGUI extends JFrame {
     //-------------------------------------------------------------//
     //LOGOUT METHOD
     private void logout() {
-        new ATMGUI(currBank); // Close the current window
+        dispose();
+        //new ATMGUI(currBank); // Close the current window
     }
 
     //-------------------------------------------------------------//
