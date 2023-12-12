@@ -16,6 +16,12 @@ public class Bank {
         return account.getPin().equals(pin); // Successful login
     }
 
+
+    public String getPin(String accountNumber, String pin){
+        Account account = getAccount(accountNumber);
+        return account.getPin();
+    }
+
     public void addAccount(Account account) {
         accounts.put(account.getAccountNumber(), account);
     }
@@ -26,6 +32,12 @@ public class Bank {
 
     public boolean isAccountExists(String accountNumber) {
         return accounts.containsKey(accountNumber);
+    }
+
+    public String getAccountName(String accountNumber) {
+        Account currAccount = accounts.get(accountNumber);
+        String accountName = currAccount.getAccountName();
+        return accountName;
     }
 
     public boolean transferFunds(String sourceAccountNumber, String destinationAccountNumber, double amount, double balance) {
@@ -48,13 +60,14 @@ public class Bank {
         return true; // Transfer successful
         
 }
-public void printAllAccountDetails() {
+public StringBuilder printAllAccountDetails() {
+
+    StringBuilder allBankDetails = new StringBuilder("All account details\n");
     for (Account account : accounts.values()) {
-        System.out.println("Account Number: " + account.getAccountNumber());
-        System.out.println("Account Name: " + account.getAccountName());
-        System.out.println("Balance: $" + account.getBalance());
-        System.out.println("Date Created: " + account.getDateCreated());
-        System.out.println(); // Add space between accounts
+
+        allBankDetails.append("\n"+ "Account Number: " + account.getAccountNumber() + "\n" + "Account Name: " + account.getAccountName() + "\n" +"Balance: $" + account.getBalance() + "\n"+ "Date Created: " + account.getDateCreated() + "\n");
     }
+
+    return allBankDetails;
 }
 }

@@ -15,6 +15,7 @@ public class Account {
     private Date balanceUpdated;
     private Date withdrawUpdated;
     private String accountName;
+    public int loginAttemptsRemaining = 3;
 
      // Transaction history data
     private List<Transaction> transactions;
@@ -43,6 +44,12 @@ public class Account {
         this.transactions = new ArrayList<>();
     }
 
+
+    public void invalitAttempt()
+    {
+        loginAttemptsRemaining--;
+        return;
+    }
 
     public String getAccountNumber() {
         return accountNumber;
@@ -119,8 +126,8 @@ public class Account {
         System.out.println("Bank Statement");
         System.out.println("Account Name : " +  account.getAccountName());
         System.out.println("Account Number : " +  account.getAccountNumber());
-        System.out.println("Account Balance : " +  account.getBalance() + "Last Deposit amount: " +lastDeposit+ " Received at : " +balanceUpdated);
-        System.out.println("Last Deposit Value : " +  account.getBalance() + "Last Withdrawal amount: " + lastWithdrawal + "withdrawn at : " + withdrawUpdated);
+        System.out.println("Account Balance : " +  account.getBalance() + " || Last Deposit amount: " +lastDeposit+ " : Received at : " +balanceUpdated);
+        System.out.println("Last Deposit Value : " +  account.getBalance() + " || Last Withdrawal amount: " + lastWithdrawal + " : withdrawn at : " + withdrawUpdated);
         System.out.println("Account Created Date : " + account.getDateCreated());
         System.out.println();
         // System.out.println("Balance: $" + account.getBalance());
