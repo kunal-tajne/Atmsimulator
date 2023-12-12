@@ -5,6 +5,7 @@ import java.util.Date;
 
 public class AccountMenuGUI extends JFrame {
     private JTextArea resultArea;
+    private JTextArea accountsArea;
     private JTextArea textAreaScrollable;
     private JScrollPane scrollPane;
     private String accountNumber;
@@ -30,15 +31,27 @@ public class AccountMenuGUI extends JFrame {
     }
 
     private void initialize() {
-        setTitle("Account Menu");
-        setSize(700, 300);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        if(currAccount.getAccountName() != "Admin")
+        {
+            setTitle("Account Menu");
+            setSize(700, 300);
+            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+           
+        }
+        else
+        {
+            setTitle("Account Menu");
+            setSize(700, 600);
+            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        }
 
         JPanel panel = new JPanel();
         placeComponents(panel);
         add(panel);
 
         setVisible(true);
+                
     }
 
     private void placeComponents(JPanel panel) {
@@ -48,12 +61,13 @@ public class AccountMenuGUI extends JFrame {
         welcomeLabel.setBounds(200, 20, 300, 40);
         panel.add(welcomeLabel);
 
+        if(currAccount.getAccountName() != "Admin"){
         resultArea = new JTextArea();
         JScrollPane scrollPane = new JScrollPane(resultArea);
         scrollPane.setBounds(20, 150, 650, 100);
         panel.add(scrollPane);
 
-        //DEPOSIT
+//DEPOSIT
         JButton depositButton = new JButton("Deposit");
         depositButton.setBounds(10, 70, 150, 25);
 
@@ -64,7 +78,7 @@ public class AccountMenuGUI extends JFrame {
         });
         panel.add(depositButton);
 
-        //CHANGE PIN
+//CHANGE PIN
 
         JButton changePin = new JButton("Change Pin");
         changePin.setBounds(10, 110, 150, 25);
@@ -75,7 +89,7 @@ public class AccountMenuGUI extends JFrame {
         });
         panel.add(changePin);
 
-        //WITHDRAW
+//WITHDRAW
 
         JButton withdrawButton = new JButton("Withdraw");
         withdrawButton.setBounds(180, 70, 150, 25);
@@ -86,7 +100,7 @@ public class AccountMenuGUI extends JFrame {
         });
         panel.add(withdrawButton);
 
-        //CHECK BALANCE
+//CHECK BALANCE
 
         JButton checkBalanceButton = new JButton("Check Balance");
         checkBalanceButton.setBounds(350, 70, 150, 25);
@@ -97,7 +111,7 @@ public class AccountMenuGUI extends JFrame {
         });
         panel.add(checkBalanceButton);
 
-         //TRANSFER FUNDS
+//TRANSFER FUNDS
 
         JButton transferFunds = new JButton("Transfer Funds");
         transferFunds.setBounds(520, 70, 150, 25);
@@ -108,7 +122,7 @@ public class AccountMenuGUI extends JFrame {
         });
         panel.add(transferFunds);
 
-        //LOGOUT
+//LOGOUT
 
         JButton logoutButton = new JButton("Logout");
         logoutButton.setBounds(350, 110, 150, 25);
@@ -119,7 +133,7 @@ public class AccountMenuGUI extends JFrame {
         });
         panel.add(logoutButton);
 
-        //PRINT STATEMENT
+//PRINT STATEMENT
 
         JButton printStatement = new JButton("Print Statement");
         printStatement.setBounds(180, 110, 150, 25);
@@ -129,16 +143,36 @@ public class AccountMenuGUI extends JFrame {
             }
         });
         panel.add(printStatement);
+    }
+    else
+    {
+        //FOR ADMIN DISPLAY DIALOG BOX
+        accountsArea = new JTextArea();
+        JScrollPane scrollPane = new JScrollPane(accountsArea);
+        scrollPane.setBounds(20, 150, 650, 400);
+        panel.add(scrollPane);
 
-        JButton adminAccess = new JButton("Admin Access");
-        adminAccess.setBounds(520, 110, 150, 25);
+        JButton adminAccess = new JButton("Access all accounts info");
+        adminAccess.setBounds(175, 80, 300, 25);
         adminAccess.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 printAllAccountDetails();
             }
         });
-        if(currAccount.getAccountName() == "Admin") 
-            panel.add(adminAccess);
+        panel.add(adminAccess);
+
+        //LOGOUT
+
+        JButton logoutButton = new JButton("Logout");
+        logoutButton.setBounds(250, 110, 150, 25);
+        logoutButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                logout();
+            }
+        });
+        panel.add(logoutButton);
+
+    }
         
     }
 
@@ -173,13 +207,21 @@ public class AccountMenuGUI extends JFrame {
         if(currBank.getPin(accountNumber, pin).equals(currPin))
         {
             Account currAccount = currBank.getAccount(accountNumber);
-            currAccount.withdraw(withdrawAmount);
+            if(currAccount.withdraw(withdrawAmount))
+            {
+                double accountBalance = currAccount.getBalance();
+                currAccount.addTransaction(new Transaction(new Date(), " Withdrawal", -withdrawAmount,  currAccount.getBalance()));
 
-            double accountBalance = currAccount.getBalance();
-            currAccount.addTransaction(new Transaction(new Date(), " Withdrawal", -withdrawAmount,  currAccount.getBalance()));
-
-            String message = "Withdraw successful!\nYour new balance is: $" + accountBalance;
-            JOptionPane.showMessageDialog(null, message, "Deposit Successful", JOptionPane.INFORMATION_MESSAGE);
+                String message = "Withdraw successful!\nYour new balance is: $" + accountBalance;
+                JOptionPane.showMessageDialog(null, message, "Withdrawal Successful", JOptionPane.INFORMATION_MESSAGE);
+            }
+            else
+            {
+                double accountBalance = currAccount.getBalance();
+                String message = "Low Balance $" + accountBalance;
+                JOptionPane.showMessageDialog(null, message, "Not Sufficient Balance", JOptionPane.INFORMATION_MESSAGE);
+            }
+            
         }
         else if(currAccount.loginAttemptsRemaining == 0)
         {
@@ -209,7 +251,7 @@ public class AccountMenuGUI extends JFrame {
     }
 
     //-------------------------------------------------------------//
-    //CHNAGE PIN METHOD
+    //CHANGE PIN METHOD
 
     private void changePin() {
 
@@ -285,9 +327,10 @@ public class AccountMenuGUI extends JFrame {
        
     }
 
+    //-------------------------------------------------------------//
     //PRINT STATEMENT
 
-     private void printStatement() {
+    private void printStatement() {
 
     StringBuilder statement = new StringBuilder("Account Statement:\n");
 
@@ -304,24 +347,13 @@ public class AccountMenuGUI extends JFrame {
         new ATMGUI(currBank); // Close the current window
     }
 
-    public void printAllAccountDetails() {
+    //-------------------------------------------------------------//
+    //PRINT ACCOUNT DETAILS (ADMIN)
 
+    public void printAllAccountDetails() {
+        
         StringBuilder allAccountDetails = currBank.printAllAccountDetails();
 
-        resultArea.setText(allAccountDetails.toString());
+        accountsArea.setText(allAccountDetails.toString());
     }
-
-
-
-    // public static void main(String[] args) {
-    //     // This part is just for testing
-    //     SwingUtilities.invokeLater(new Runnable() {
-    //         public void run() {
-    //             Bank bank = new Bank();
-    //             ATM atm = new ATM(bank); // Instantiate your ATM class
-    //             //atm.createAccount(new Account("John Doe", "123456", "1111", 100, null)); // Set a dummy account
-    //             new AccountMenuGUI(atm);
-    //         }
-    //     });
-    // }
 }

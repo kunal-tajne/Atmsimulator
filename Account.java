@@ -102,6 +102,7 @@ public class Account {
     }
 
     public boolean withdraw(double amount) {
+
         if (amount > remainingWithdrawalLimit) {
             System.out.println("Daily withdrawal Limit for your account is $1000");
             return false; // Exceeding withdrawal limit
@@ -120,7 +121,7 @@ public class Account {
 
     public void printAccountDetails(Account account) {
 
-        if(account.getAccountNumber()== "0000")
+        if(account.getAccountNumber()== "000000")
         return;
         System.out.println();
         System.out.println("Bank Statement");

@@ -18,7 +18,7 @@ public class ATMGUI extends JFrame {
     }
 
     private void initialize() {
-        setTitle("ATM Simulator");
+        setTitle("Welcome to the ATM. Please Input ID and Password");
         setSize(700, 300);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -33,23 +33,23 @@ public class ATMGUI extends JFrame {
         panel.setLayout(null);
 
         JLabel accountLabel = new JLabel("Account Number:");
-        accountLabel.setBounds(60, 20, 200, 25);
+        accountLabel.setBounds(110, 80, 200, 25);
         panel.add(accountLabel);
 
         accountNumberField = new JTextField(20);
-        accountNumberField.setBounds(180, 20, 300, 25);
+        accountNumberField.setBounds(230, 80, 300, 25);
         panel.add(accountNumberField);
 
         JLabel pinLabel = new JLabel("PIN:");
-        pinLabel.setBounds(60, 50, 120, 25);
+        pinLabel.setBounds(110, 120, 120, 25);
         panel.add(pinLabel);
 
         pinField = new JPasswordField(20);
-        pinField.setBounds(180, 50, 300, 25);
+        pinField.setBounds(230, 120, 300, 25);
         panel.add(pinField);
 
         JButton loginButton = new JButton("Login");
-        loginButton.setBounds(200, 85, 100, 25);
+        loginButton.setBounds(250, 180, 100, 25);
         panel.add(loginButton);
         
         loginButton.addActionListener(new ActionListener() {
@@ -58,12 +58,12 @@ public class ATMGUI extends JFrame {
             }
         });
 
-        resultArea = new JTextArea();
-        resultArea.setBounds(20, 120, 650, 100);
-        panel.add(resultArea);
+        // resultArea = new JTextArea();
+        // resultArea.setBounds(20, 120, 650, 100);
+        // panel.add(resultArea);
 
         JButton createAccountButton = new JButton("Create Account");
-        createAccountButton.setBounds(300, 85, 150, 25);
+        createAccountButton.setBounds(350, 180, 150, 25);
         panel.add(createAccountButton);
 
         createAccountButton.addActionListener(new ActionListener() {
@@ -74,6 +74,7 @@ public class ATMGUI extends JFrame {
 
     }
 
+//CREATE ACCOUNT
 
     private void showCreateAccountDialog() {
 
@@ -104,7 +105,6 @@ public class ATMGUI extends JFrame {
 
         String accountNumber = accountNumberField.getText();
         String pin = new String(pinField.getPassword());
-
         String accountName = currBank.getAccountName(accountNumber);
 
         if(currBank.login(accountNumber, pin))
@@ -138,8 +138,6 @@ public class ATMGUI extends JFrame {
         currBank.addAccount(account);
         return 0;  
     }
-        
-
 
 
     public static void main(String[] args) {
@@ -148,7 +146,7 @@ public class ATMGUI extends JFrame {
 
             Bank bank = new Bank();
 
-            Account account1 = new Account("Kunal", "1", "1", 100, new Date());
+            Account account1 = new Account("Kunal", "54321", "1111", 100, new Date());
             bank.addAccount(account1);
 
             Account account2 = new Account("Vrushali", "2", "2", 100, new Date());

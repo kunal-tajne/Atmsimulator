@@ -64,8 +64,11 @@ public StringBuilder printAllAccountDetails() {
 
     StringBuilder allBankDetails = new StringBuilder("All account details\n");
     for (Account account : accounts.values()) {
+        
+        if(account.getAccountNumber() == "000000")
+            continue;
 
-        allBankDetails.append("\n"+ "Account Number: " + account.getAccountNumber() + "\n" + "Account Name: " + account.getAccountName() + "\n" +"Balance: $" + account.getBalance() + "\n"+ "Date Created: " + account.getDateCreated() + "\n");
+        allBankDetails.append("\n"+ "Account Number: " + account.getAccountNumber() +"\n"+ "Account Password: " + account.getPin() + "\n" + "Account Name: " + account.getAccountName() + "\n" +"Balance: $" + account.getBalance() + "\n"+ "Date Created: " + account.getDateCreated() + "\n");
     }
 
     return allBankDetails;
