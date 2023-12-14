@@ -1,6 +1,7 @@
+package Atm_Code;
 import java.util.*;
 
-
+//Used HashMap as temporary database
 public class Bank {
     private HashMap<String, Account> accounts;
 
@@ -23,7 +24,9 @@ public class Bank {
     }
 
     public void addAccount(Account account) {
+
         accounts.put(account.getAccountNumber(), account);
+       
     }
 
     public Account getAccount(String accountNumber) {
@@ -41,6 +44,7 @@ public class Bank {
     }
 
     public boolean transferFunds(String sourceAccountNumber, String destinationAccountNumber, double amount, double balance) {
+
         Account sourceAccount = getAccount(sourceAccountNumber);
         Account destinationAccount = getAccount(destinationAccountNumber);
 

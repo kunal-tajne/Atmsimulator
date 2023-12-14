@@ -1,4 +1,6 @@
+package Atm_Code;
 import javax.swing.*;
+
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Date;
@@ -11,16 +13,16 @@ public class AccountMenuGUI extends JFrame {
     private String accountNumber;
     private String accountName;
     private String pin;
-    private Bank currBank;
+    private static ATMdb myDatabase;
     Account currAccount;
 
-     public AccountMenuGUI(Bank currBank , String accountNumber, String accountName, String Pin, Account currAccount) {
-        this.currBank = currBank;
+     public AccountMenuGUI(String accountNumber, String accountName, String Pin, Account currAccount, ATMdb myDatabase) {
         this.accountName = accountName;
         this.accountNumber = accountNumber;
         this.pin = pin;
-        this.currAccount = currAccount;
-        resultArea = new JTextArea();
+        this.currAccount = myDatabase.retrieveAccount(accountNumber);
+        this.myDatabase = myDatabase;
+        this.resultArea = new JTextArea();
         textAreaScrollable = new JTextArea();
         textAreaScrollable.setEditable(false);
         scrollPane = new JScrollPane(textAreaScrollable);
@@ -31,7 +33,8 @@ public class AccountMenuGUI extends JFrame {
     }
 
     private void initialize() {
-        if(currAccount.getAccountName() != "Admin")
+
+        if(!accountName.equals("Admin"))
         {
             setTitle("Account Menu");
             setSize(700, 300);
@@ -61,7 +64,7 @@ public class AccountMenuGUI extends JFrame {
         welcomeLabel.setBounds(200, 20, 300, 40);
         panel.add(welcomeLabel);
 
-        if(currAccount.getAccountName() != "Admin"){
+        if(!accountName.equals("Admin")){
         resultArea = new JTextArea();
         JScrollPane scrollPane = new JScrollPane(resultArea);
         scrollPane.setBounds(20, 150, 650, 100);
@@ -164,13 +167,23 @@ public class AccountMenuGUI extends JFrame {
         //LOGOUT
 
         JButton logoutButton = new JButton("Logout");
-        logoutButton.setBounds(250, 110, 150, 25);
+        logoutButton.setBounds(320, 110, 150, 25);
         logoutButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 logout();
             }
         });
         panel.add(logoutButton);
+
+        //DELETE ACCOUNT
+        JButton deleteAccount = new JButton("Delete a Account");
+        deleteAccount.setBounds(175, 110, 150, 25);
+        deleteAccount.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                deleteAccount();
+            }
+        });
+        panel.add(deleteAccount);
 
     }
         
@@ -183,12 +196,13 @@ public class AccountMenuGUI extends JFrame {
 
         String takeInputAmount = JOptionPane.showInputDialog("Enter Amount to be Deposited");
         double depositAmount = Double.parseDouble(takeInputAmount);
-
-        Account currAccount = currBank.getAccount(accountNumber);
         currAccount.deposit(depositAmount);
 
         double accountBalance = currAccount.getBalance();
-        currAccount.addTransaction(new Transaction(new Date(), "   Deposit     ",depositAmount,  currAccount.getBalance()));
+
+        //currAccount.addTransaction(new Transaction(new Date(), "   Deposit     ",depositAmount,  currAccount.getBalance()));
+
+        myDatabase.createTransaction(accountNumber,new Date(), "    Deposit        ",depositAmount, accountBalance);
 
         String message = "Deposit successful!\nYour new balance is: $" + accountBalance;
         JOptionPane.showMessageDialog(null, message, "Deposit Successful", JOptionPane.INFORMATION_MESSAGE);
@@ -199,18 +213,20 @@ public class AccountMenuGUI extends JFrame {
     //WITHDRAW METHOD
 
     private void withdraw() {
+
         String takeInputAmount = JOptionPane.showInputDialog("Enter Amount to be Withdrawn");
         double withdrawAmount = Double.parseDouble(takeInputAmount);
-
         String currPin = JOptionPane.showInputDialog("Enter Account Pin");
 
-        if(currBank.getPin(accountNumber, pin).equals(currPin))
+        if(myDatabase.getPin(accountNumber).equals(currPin))
         {
-            Account currAccount = currBank.getAccount(accountNumber);
+
             if(currAccount.withdraw(withdrawAmount))
             {
                 double accountBalance = currAccount.getBalance();
-                currAccount.addTransaction(new Transaction(new Date(), " Withdrawal", -withdrawAmount,  currAccount.getBalance()));
+                //currAccount.addTransaction(new Transaction(new Date(), " Withdrawal", -withdrawAmount,  currAccount.getBalance()));
+                
+                myDatabase.createTransaction(accountNumber,new Date(), "Withdrawal      ",withdrawAmount, accountBalance);
 
                 String message = "Withdraw successful!\nYour new balance is: $" + accountBalance;
                 JOptionPane.showMessageDialog(null, message, "Withdrawal Successful", JOptionPane.INFORMATION_MESSAGE);
@@ -227,7 +243,9 @@ public class AccountMenuGUI extends JFrame {
         {
             String message = "Account blocked for 24 hours due to multiple incorrect login attempts.";
             JOptionPane.showMessageDialog(null, message, "Account Blocked", JOptionPane.INFORMATION_MESSAGE);
-            currBank.getAccount(accountNumber).setBlockedUntil(new Date(System.currentTimeMillis() + 86400000));
+            
+            myDatabase.blockAccount(accountNumber, new Date(System.currentTimeMillis() + 86400000));
+            myDatabase.retrieveAccount(accountNumber).setBlockedUntil(new Date(System.currentTimeMillis() + 86400000));
             logout();
             return;
         }
@@ -260,9 +278,10 @@ public class AccountMenuGUI extends JFrame {
 
         if (currAccount.getPin().equals(oldPin)) {
             String newPin = JOptionPane.showInputDialog("Enter Your New Pin");
-            currAccount.setPin(newPin);
+            
+            myDatabase.changePin(newPin, accountNumber);
         
-             String message = "PIN changed successfully! ";
+            String message = "PIN changed successfully! ";
             JOptionPane.showMessageDialog(null, message, "Pin Changed", JOptionPane.INFORMATION_MESSAGE);
         }
     
@@ -270,7 +289,8 @@ public class AccountMenuGUI extends JFrame {
         {
             String message = "Account blocked for 24 hours due to multiple incorrect login attempts.";
             JOptionPane.showMessageDialog(null, message, "Account Blocked", JOptionPane.INFORMATION_MESSAGE);
-            currBank.getAccount(accountNumber).setBlockedUntil(new Date(System.currentTimeMillis() + 86400000));
+            myDatabase.blockAccount(accountNumber, new Date(System.currentTimeMillis() + 86400000));
+            myDatabase.retrieveAccount(accountNumber).setBlockedUntil(new Date(System.currentTimeMillis() + 86400000));
             logout();
             return;
         }
@@ -297,25 +317,33 @@ public class AccountMenuGUI extends JFrame {
             JOptionPane.showMessageDialog(null, message, "Account number don't match", JOptionPane.INFORMATION_MESSAGE);
         }
         
+        String transferAmount = JOptionPane.showInputDialog("Enter transfer amount: ");
+        double amount = Double.parseDouble(transferAmount);
+            
         String accPin = JOptionPane.showInputDialog("Enter pin to confirm Transaction : ");
         if(currAccount.getPin().equals(accPin))
         {
-            String transferAmount = JOptionPane.showInputDialog("Enter transfer amount: ");
-            double amount = Double.parseDouble(transferAmount);
-
-            if (!currBank.transferFunds(currAccount.getAccountNumber(), recipientAccountNumber, amount, currAccount.getBalance())) 
+            int result = myDatabase.transferFunds(accountNumber, recipientAccountNumber, amount, currAccount.getBalance());
+            if (result == 1) 
             {
-            resultArea.setText("Transfer failed. Check balance or account number and Please try again.");
+            resultArea.setText("Transfer failed. Account number does not exist and Please try again.");
             } 
+
+            else if(result == 2)
+            {
+                resultArea.setText("Transfer failed. Account Balance is low. Please try again.");
+            }
         else {
             resultArea.setText("Transfer Successfull. Remaining Balance : " + currAccount.getBalance());
         }
+
         }
          else if(currAccount.loginAttemptsRemaining == 1)
         {
             String message = "Account blocked for 24 hours due to multiple incorrect login attempts.";
             JOptionPane.showMessageDialog(null, message, "Account Blocked", JOptionPane.INFORMATION_MESSAGE);
-            currBank.getAccount(accountNumber).setBlockedUntil(new Date(System.currentTimeMillis() + 86400000));
+            
+            myDatabase.blockAccount(confirmAccountNumber, new Date(System.currentTimeMillis() + 86400000));
             logout();
             return;
         }
@@ -335,19 +363,16 @@ public class AccountMenuGUI extends JFrame {
 
     private void printStatement() {
 
-    StringBuilder statement = new StringBuilder("Account Statement:\n");
+    StringBuilder userBankStatement = myDatabase.getUserTransaction(accountNumber);
 
-    // Iterate over transactions and append them to the statement
-    for (Transaction transaction : currAccount.getTransactions()) {
-        statement.append(transaction.getDate() + "       " + transaction.getDescription()  + "             "  + transaction.getAmount()  + "            "  + transaction.getBalance()).append("\n");
-    }
-    resultArea.setText(statement.toString());
+    resultArea.setText(userBankStatement.toString());
     }
 
     //-------------------------------------------------------------//
     //LOGOUT METHOD
     private void logout() {
         dispose();
+        myDatabase.closeConnection();
         //new ATMGUI(currBank); // Close the current window
     }
 
@@ -356,8 +381,44 @@ public class AccountMenuGUI extends JFrame {
 
     public void printAllAccountDetails() {
         
-        StringBuilder allAccountDetails = currBank.printAllAccountDetails();
+        StringBuilder allAccountDetails = myDatabase.getAllAccountsInfo();
 
         accountsArea.setText(allAccountDetails.toString());
     }
+
+      public void deleteAccount()
+      {
+        String accountNumberToDelete = JOptionPane.showInputDialog("Enter recipient account number: ");
+
+        String accPin = JOptionPane.showInputDialog("Enter pin to confirm deletion : ");
+
+        if(currAccount.getPin().equals(accPin))
+        {
+            myDatabase.deleteAccount(accountNumberToDelete);
+            String message = "Account deleted successfully";
+            JOptionPane.showMessageDialog(null, message, "Account deleted", JOptionPane.INFORMATION_MESSAGE);
+        }
+         else if(currAccount.loginAttemptsRemaining == 1)
+        {
+            String message = "Account blocked for 24 hours due to multiple incorrect login attempts.";
+            JOptionPane.showMessageDialog(null, message, "Account Blocked", JOptionPane.INFORMATION_MESSAGE);
+            
+            myDatabase.blockAccount(accountNumber, new Date(System.currentTimeMillis() + 86400000));
+
+            logout();
+            return;
+        }
+        else
+        {
+            currAccount.loginAttemptsRemaining--;
+            String message = "Wrong Pin Try Again. You have " + currAccount.loginAttemptsRemaining + " attempts remaining";
+            JOptionPane.showMessageDialog(null, message, "Wrong Pin", JOptionPane.INFORMATION_MESSAGE);
+            throw new IllegalArgumentException("Wrong Pin");
+        }
+
+       
+        
+      }
+
+
 }

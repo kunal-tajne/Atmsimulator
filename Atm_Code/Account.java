@@ -1,3 +1,4 @@
+package Atm_Code;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -16,6 +17,7 @@ public class Account {
     private Date withdrawUpdated;
     private String accountName;
     public int loginAttemptsRemaining = 3;
+    public double currAmount = 0;
 
      // Transaction history data
     private List<Transaction> transactions;
@@ -79,6 +81,7 @@ public class Account {
 
     public void setPin(String pin) {
         this.pin = pin;
+        return;
     }
 
     public boolean deposit(double amount) {
@@ -97,16 +100,17 @@ public class Account {
         remainingDepositLimit -= amount;
         balanceUpdated = new Date();
         lastDeposit = amount;
+        currAmount = amount;
 
         return true;
     }
 
     public boolean withdraw(double amount) {
 
-        if (amount > remainingWithdrawalLimit) {
-            System.out.println("Daily withdrawal Limit for your account is $1000");
-            return false; // Exceeding withdrawal limit
-        }
+        // if (amount > remainingWithdrawalLimit) {
+        //     System.out.println("Daily withdrawal Limit for your account is $1000");
+        //     return false; // Exceeding withdrawal limit
+        // }
         if (amount <= 0 || amount > balance) {
             return false; // Invalid withdrawal amount or insufficient funds
         }
@@ -115,8 +119,14 @@ public class Account {
 
         withdrawUpdated = new Date();
         lastWithdrawal = amount;
+        currAmount = amount;
 
         return true;
+    }
+
+    public double getAmount()
+    {
+        return currAmount;
     }
 
     public void printAccountDetails(Account account) {
@@ -149,7 +159,7 @@ public class Account {
 
     public void setBlockedUntil(Date blockedUntil)
  
-{
+    {
         this.blockedUntil = blockedUntil;
     }
 

@@ -42,5 +42,9 @@
             "username": "root",
             "password": "caching_sha2_password"
         }
+    ],
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "/Users/kunaltajne/Downloads/mysql-connector-j-8.2.0/mysql-connector-j-8.2.0.jar"
     ]
 }
