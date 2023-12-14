@@ -6,21 +6,15 @@ import java.util.Date;
 
 public class Account {
 
-    private double dailyWithdrawalLimit;
-    private double dailyDepositLimit;
-    private double lastDeposit;
-    private double lastWithdrawal;
-    private double remainingWithdrawalLimit;
-    private double remainingDepositLimit;
+
+    public double remainingDepositLimit;
     private Date dateCreated;
-    private Date balanceUpdated;
-    private Date withdrawUpdated;
+
+
     private String accountName;
     public int loginAttemptsRemaining = 3;
     public double currAmount = 0;
-
-     // Transaction history data
-    private List<Transaction> transactions;
+    ATMdb myDatabase;
 
 
     private String accountNumber;
@@ -33,17 +27,9 @@ public class Account {
         this.accountNumber = accountNumber;
         this.pin = pin;
         this.balance = balance;
-        this.transactions = new ArrayList<>();
         this.blockedUntil = null;
         this.accountName = accountName;
-
         this.dateCreated = dateCreated;
-
-        this.dailyWithdrawalLimit = 1000; // Set default withdrawal limit
-        this.dailyDepositLimit = 10000; // Set default deposit limit
-        this.remainingWithdrawalLimit = dailyWithdrawalLimit;
-        this.remainingDepositLimit = dailyDepositLimit;
-        this.transactions = new ArrayList<>();
     }
 
 
@@ -84,65 +70,74 @@ public class Account {
         return;
     }
 
-    public boolean deposit(double amount) {
-        if (amount > remainingDepositLimit) {
-            {
-                System.out.println("Daily Deposit Limit for your account is $10,000");
-            }
-            return false; // Exceeding deposit limit
+
+    public int deposit(double amount, double currDepositLimit) {
+
+        double balance = myDatabase.getAccountBalance(accountNumber);
+        System.out.println("reamininf limit " +currDepositLimit);
+
+
+        if (amount > currDepositLimit) {
+            
+            System.out.println("Daily Deposit Limit for your account is $10,000");
+            return 1; // Exceeding deposit limit
         }
 
         if (amount <= 0) {
-            return false; // Invalid deposit amount
-        }
+            return 2; // Invalid deposit amount
+        }        
 
         balance += amount;
-        remainingDepositLimit -= amount;
-        balanceUpdated = new Date();
-        lastDeposit = amount;
-        currAmount = amount;
 
-        return true;
+        double remainingDepositLimit = currDepositLimit - amount;
+        myDatabase.updateBalance(accountNumber, balance);
+        myDatabase.updateDeposit(accountNumber, remainingDepositLimit);
+        myDatabase.recordDeposit(accountNumber);
+
+        return 0;
     }
 
-    public boolean withdraw(double amount) {
+    public int withdraw(double amount, double currWithDrawalLimit) {
 
-        // if (amount > remainingWithdrawalLimit) {
-        //     System.out.println("Daily withdrawal Limit for your account is $1000");
-        //     return false; // Exceeding withdrawal limit
-        // }
-        if (amount <= 0 || amount > balance) {
-            return false; // Invalid withdrawal amount or insufficient funds
+        double balance = myDatabase.getAccountBalance(accountNumber);
+
+        if (amount > currWithDrawalLimit) {
+            System.out.println("Daily withdrawal Limit for your account is $2000");
+            return 1; // Exceeding withdrawal limit
         }
-        remainingWithdrawalLimit -= amount;
+        if (amount <= 0 || amount > balance) {
+            return 2; // Invalid withdrawal amount or insufficient funds
+        }
+
         balance -= amount;
+        System.out.println("Updating Balance Sender : " + balance);
 
-        withdrawUpdated = new Date();
-        lastWithdrawal = amount;
-        currAmount = amount;
+        double remainingWithdrawalLimit = currWithDrawalLimit - amount;
+        
+        myDatabase.updateBalance(accountNumber, balance);
+        myDatabase.updateWithdrawal(accountNumber, remainingWithdrawalLimit);
+        myDatabase.recordWithdrawal(accountNumber);
 
-        return true;
+        return 0;
     }
+
+     public void withdraw(double amount)
+     {
+        balance -= amount;
+        myDatabase.updateBalance(accountNumber, balance);
+        myDatabase.recordWithdrawal(accountNumber);
+     } 
+
+      public void deposit(double amount)
+     {
+        balance += amount;
+        myDatabase.updateBalance(accountNumber, balance);
+        myDatabase.recordDeposit(accountNumber);
+     } 
 
     public double getAmount()
     {
         return currAmount;
-    }
-
-    public void printAccountDetails(Account account) {
-
-        if(account.getAccountNumber()== "000000")
-        return;
-        System.out.println();
-        System.out.println("Bank Statement");
-        System.out.println("Account Name : " +  account.getAccountName());
-        System.out.println("Account Number : " +  account.getAccountNumber());
-        System.out.println("Account Balance : " +  account.getBalance() + " || Last Deposit amount: " +lastDeposit+ " : Received at : " +balanceUpdated);
-        System.out.println("Last Deposit Value : " +  account.getBalance() + " || Last Withdrawal amount: " + lastWithdrawal + " : withdrawn at : " + withdrawUpdated);
-        System.out.println("Account Created Date : " + account.getDateCreated());
-        System.out.println();
-        // System.out.println("Balance: $" + account.getBalance());
-        // System.out.println("Date Created: " + account.getDateCreated());
     }
     
 
@@ -163,27 +158,4 @@ public class Account {
         this.blockedUntil = blockedUntil;
     }
 
-public void addTransaction(Transaction transaction)
- 
-{
-    this.transactions.add(transaction);
-}
-
-public List<Transaction> getTransactions()
- 
-{
-    return Collections.unmodifiableList(transactions); // Return unmodifiable list for safety
-}
-
-public void printTransactionHistory(Account account) {
-    System.out.println("Transaction History:");
-    System.out.println();
-    System.out.println("|            Date              |    Description    |      Amount      |      Balance      |");
-    System.out.println("|------------------------------|-------------------|------------------|-------------------|");
-
-    for (Transaction transaction : account.getTransactions()) {
-        //System.out.println(transaction.toString());
-        System.out.println(transaction.getDate() + "       " + transaction.getDescription()  + "             "  + transaction.getAmount()  + "            "  + transaction.getBalance());
-    }
-}
 }

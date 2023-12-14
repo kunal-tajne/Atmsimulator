@@ -196,13 +196,33 @@ public class AccountMenuGUI extends JFrame {
 
         String takeInputAmount = JOptionPane.showInputDialog("Enter Amount to be Deposited");
         double depositAmount = Double.parseDouble(takeInputAmount);
-        currAccount.deposit(depositAmount);
 
-        double accountBalance = currAccount.getBalance();
+        double currDepositLimit = myDatabase.retrieveDeposit(accountNumber);
+        System.out.println("In DESPOTI : " + currDepositLimit);
 
-        //currAccount.addTransaction(new Transaction(new Date(), "   Deposit     ",depositAmount,  currAccount.getBalance()));
+        int result = currAccount.deposit(depositAmount, currDepositLimit);
+        
+        currDepositLimit = myDatabase.retrieveDeposit(accountNumber);   
+        
+        if(result == 1)
+        {
+            String message = "Above per day Deposit Limit of $10,000 " + "Remaining Limit for Today : $" + currDepositLimit;
+            JOptionPane.showMessageDialog(null, message, "Limit Reached", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        else if(result == 2)
+        {
+            String message = "Invalid deposit amount";
+            JOptionPane.showMessageDialog(null, message, "Try Again", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        double accountBalance = myDatabase.getAccountBalance(accountNumber);
 
         myDatabase.createTransaction(accountNumber,new Date(), "    Deposit        ",depositAmount, accountBalance);
+        
+        //myDatabase.updateDailyLimits(accountNumber, currAccount.remainingWithdrawalLimit, currAccount.remainingDepositLimit);
+        myDatabase.recordDeposit(accountNumber);
 
         String message = "Deposit successful!\nYour new balance is: $" + accountBalance;
         JOptionPane.showMessageDialog(null, message, "Deposit Successful", JOptionPane.INFORMATION_MESSAGE);
@@ -220,17 +240,27 @@ public class AccountMenuGUI extends JFrame {
 
         if(myDatabase.getPin(accountNumber).equals(currPin))
         {
+            double currWithDrawalLimit = myDatabase.retrieveWithdrawal(accountNumber);
+            int result = currAccount.withdraw(withdrawAmount, currWithDrawalLimit);
 
-            if(currAccount.withdraw(withdrawAmount))
+            if(result == 0)
             {
-                double accountBalance = currAccount.getBalance();
-                //currAccount.addTransaction(new Transaction(new Date(), " Withdrawal", -withdrawAmount,  currAccount.getBalance()));
-                
+                double accountBalance = myDatabase.getAccountBalance(accountNumber);
+
                 myDatabase.createTransaction(accountNumber,new Date(), "Withdrawal      ",withdrawAmount, accountBalance);
+
+                myDatabase.recordWithdrawal(accountNumber);
 
                 String message = "Withdraw successful!\nYour new balance is: $" + accountBalance;
                 JOptionPane.showMessageDialog(null, message, "Withdrawal Successful", JOptionPane.INFORMATION_MESSAGE);
             }
+            else if(result == 1)
+            {
+                double remainingWithdrawalLimit = myDatabase.retrieveWithdrawal(accountNumber);
+                String message = "Daily withdrawal Limit for your account is $2000. Remaining Withdrwal Limit for today : $" + remainingWithdrawalLimit;
+                JOptionPane.showMessageDialog(null, message, "Withdrawal Limit Reached", JOptionPane.INFORMATION_MESSAGE);
+            }
+
             else
             {
                 double accountBalance = currAccount.getBalance();
@@ -265,7 +295,7 @@ public class AccountMenuGUI extends JFrame {
 
     private void checkBalance() {
         
-        Double balance = currAccount.getBalance();
+        Double balance = myDatabase.getAccountBalance(accountNumber);
         resultArea.setText("Your Current Account Balance is : " +balance);
     }
 
@@ -283,6 +313,7 @@ public class AccountMenuGUI extends JFrame {
         
             String message = "PIN changed successfully! ";
             JOptionPane.showMessageDialog(null, message, "Pin Changed", JOptionPane.INFORMATION_MESSAGE);
+            logout();
         }
     
         else if(currAccount.loginAttemptsRemaining == 1)
@@ -319,25 +350,38 @@ public class AccountMenuGUI extends JFrame {
         
         String transferAmount = JOptionPane.showInputDialog("Enter transfer amount: ");
         double amount = Double.parseDouble(transferAmount);
+
+        if (amount <= 0) {
+            String message = "Invalid Amount";
+            JOptionPane.showMessageDialog(null, message, "Try Again", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        if(amount > currAccount.getBalance())
+        {
+            String message = "Transfer failed. Account Balance is low. Please try again.";
+            JOptionPane.showMessageDialog(null, message, "Try Again", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        Account destinationAccount = myDatabase.retrieveAccount(recipientAccountNumber);
+        
+        if (destinationAccount == null) {
+
+            String message = "Transfer failed. Account number does not exist and Please try again.";
+            JOptionPane.showMessageDialog(null, message, "Try Again", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
             
         String accPin = JOptionPane.showInputDialog("Enter pin to confirm Transaction : ");
+        
         if(currAccount.getPin().equals(accPin))
         {
-            int result = myDatabase.transferFunds(accountNumber, recipientAccountNumber, amount, currAccount.getBalance());
-            if (result == 1) 
-            {
-            resultArea.setText("Transfer failed. Account number does not exist and Please try again.");
-            } 
+            myDatabase.transferFunds(accountNumber, recipientAccountNumber, amount);
 
-            else if(result == 2)
-            {
-                resultArea.setText("Transfer failed. Account Balance is low. Please try again.");
-            }
-        else {
-            resultArea.setText("Transfer Successfull. Remaining Balance : " + currAccount.getBalance());
+            resultArea.setText("Transfer Successfull. Remaining Balance : " + myDatabase.getAccountBalance(accountNumber));
         }
 
-        }
          else if(currAccount.loginAttemptsRemaining == 1)
         {
             String message = "Account blocked for 24 hours due to multiple incorrect login attempts.";

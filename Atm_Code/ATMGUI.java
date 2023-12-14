@@ -4,6 +4,7 @@ import java.sql.Timestamp;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Date;
+import java.util.Random;
 
 public class ATMGUI extends JFrame {
     
@@ -75,8 +76,13 @@ public class ATMGUI extends JFrame {
 
     private void showCreateAccountDialog() {
 
-        String accountName = JOptionPane.showInputDialog("Enter account name:");
-        String accountNumber = JOptionPane.showInputDialog("Enter account number:");
+        Random random = new Random();
+
+        // Generate a 6-digit random number as a string
+        String randomNumberString = String.format("%06d", random.nextInt(1000000));
+
+        String accountName = JOptionPane.showInputDialog("Enter account Name:");
+        String accountNumber = randomNumberString;
         String pin = JOptionPane.showInputDialog("Enter PIN:");
 
             int result = createAccount(accountName,accountNumber,pin);
@@ -97,6 +103,10 @@ public class ATMGUI extends JFrame {
             resultArea.setText( "Pin cannot be negative.");
 
             else
+            {
+            String message = "Account Created Succesfully.\nYour Account Number is : " + accountNumber + "\nYour Pin is : "+pin;
+            JOptionPane.showMessageDialog(null, message, "Try Again", JOptionPane.INFORMATION_MESSAGE);
+            }
             resultArea.setText( "Account Created Successfully");
 
         } 
@@ -120,6 +130,15 @@ public class ATMGUI extends JFrame {
         if(currAccount != null && currAccount.getPin().equals(pin))
         {
             String accountName = currAccount.getAccountName();
+
+            double withdrawalLimit = myDatabase.retrieveWithdrawal(accountNumber);
+            System.out.println(withdrawalLimit + "Withdraw after login : ");
+            
+            double getDepositLimit = myDatabase.retrieveDeposit(accountNumber);
+            System.out.println(getDepositLimit + "Deposit after login : ");
+            
+            //currAccount.setLimits(withdrawalLimit, getDepositLimit);
+
             new AccountMenuGUI(accountNumber,accountName, pin, currAccount, myDatabase);
         }
         else{
@@ -146,6 +165,9 @@ public class ATMGUI extends JFrame {
 
         Account account = new Account(accountName, accountNumber, pin, 100, new Date());
         myDatabase.createAccount(account);
+
+        myDatabase.updateDeposit(accountNumber, 10000);
+        myDatabase.updateWithdrawal(accountNumber, 2000);
 
         return 0;  
     }

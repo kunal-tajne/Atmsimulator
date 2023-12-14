@@ -18,6 +18,9 @@ public class ATMdb {
     private static String accountNumber;
     private static String pin ;
     private static String description;
+    public static Date LastWithdrawalDate;
+    public static Date LastDepositDate;
+
 
     // JDBC variables for opening, closing and managing connection
     private static Connection connection;
@@ -350,9 +353,9 @@ public static Timestamp blockedUntil(String accountNumber)
 
      public static String updateBalance(String accountNumber, double newBalance)
     {
-        // try {
-        //     // Open a connection
-        //     connection = DriverManager.getConnection(JDBC_URL, USERNAME, PASSWORD);
+        try {
+            // Open a connection
+            connection = DriverManager.getConnection(JDBC_URL, USERNAME, PASSWORD);
         String updateQuery = "UPDATE Accounts SET Balance = ? WHERE AccountNumber = ?";
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(updateQuery)) {
@@ -371,8 +374,12 @@ public static Timestamp blockedUntil(String accountNumber)
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
-        return null;
+       
+    }
+    catch (SQLException e) {
+            e.printStackTrace();
+        }
+         return null;
     }
 
     //DELETE ACCOUNT
@@ -433,7 +440,7 @@ public static Timestamp blockedUntil(String accountNumber)
 
     //TRANSFER FUNDS
 
-    public static int transferFunds(String sourceAccountNumber, String destinationAccountNumber, double amount, double balance)
+    public static void transferFunds(String sourceAccountNumber, String destinationAccountNumber, double amount)
     {
         try {
             // Open a connection
@@ -442,32 +449,45 @@ public static Timestamp blockedUntil(String accountNumber)
             Account sourceAccount = retrieveAccount(sourceAccountNumber);
             Account destinationAccount = retrieveAccount(destinationAccountNumber);
 
-            if (sourceAccount == null || destinationAccount == null) {
-                return 1; // Account doesn't exist
-            }
-    
-            if (!sourceAccount.withdraw(amount)) {
-                return 2; // Insufficient funds
-            }
+            sourceAccount.withdraw(amount);
 
             destinationAccount.deposit(amount);
 
-            double sourceBalance = sourceAccount.getBalance();
-            double destinationBalance = destinationAccount.getBalance();
+            double sourceBalance = getAccountBalance(sourceAccountNumber);
+            double destinationBalance = getAccountBalance(destinationAccountNumber);
 
-            updateBalance(sourceAccountNumber, sourceBalance);
-            updateBalance(destinationAccountNumber, destinationBalance);
+            // updateBalance(sourceAccountNumber, sourceBalance);
+            // updateBalance(destinationAccountNumber, destinationBalance);
 
             createTransaction(sourceAccountNumber,new Date(), "Transfer to " + destinationAccount.getAccountName(), amount, sourceBalance);
             createTransaction(destinationAccountNumber,new Date(), "Transfer from " + sourceAccount.getAccountName(), amount, destinationBalance);
-
-            return 0;
 
         } catch (SQLException e) {
             e.printStackTrace();
         } 
 
-        return 1;
+    }
+
+     // Method to retrieve the balance for an account number
+     public static double getAccountBalance(String accountNumber) {
+        String selectQuery = "SELECT Balance FROM Accounts WHERE AccountNumber = ?";
+
+        try (Connection connection = getDatabaseConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(selectQuery)) {
+
+            preparedStatement.setString(1, accountNumber);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            if (resultSet.next()) {
+                return resultSet.getDouble("Balance");
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return 0.0; // Default balance if not found or an error occurs
     }
 
     //ACCOUNT EXISTS
@@ -609,6 +629,44 @@ public static Timestamp blockedUntil(String accountNumber)
 
         return null;
     }
+
+    public static void recordWithdrawal(String accountNumber) {
+        try {
+        // Open a connection
+        connection = DriverManager.getConnection(JDBC_URL, USERNAME, PASSWORD);
+        String updateQuery = "UPDATE DailyLimits SET LastWithdrawalDate = CURRENT_DATE WHERE AccountNumber = ?";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(updateQuery)) {
+            preparedStatement.setString(1, accountNumber);
+
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        
+         } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void recordDeposit(String accountNumber) {
+        try {
+        // Open a connection
+        connection = DriverManager.getConnection(JDBC_URL, USERNAME, PASSWORD);
+        String updateQuery = "UPDATE DailyLimits SET LastDepositDate = CURRENT_DATE WHERE AccountNumber = ?";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(updateQuery)) {
+            preparedStatement.setString(1, accountNumber);
+
+            preparedStatement.executeUpdate();
+       } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        
+         } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
     
         //CLOSE CONNECTION
     public static void closeConnection()
@@ -620,6 +678,124 @@ public static Timestamp blockedUntil(String accountNumber)
                     e.printStackTrace();
                 }
             }
+    }
+
+
+    // Method to insert or update deposit and withdrawal limits for an account
+    public static void updateDeposit(String AccountNumber, double DailyDepositLimit) {
+        String updateQuery = "INSERT INTO DailyLimits (AccountNumber, DailyDepositLimit) " +
+                             "VALUES (?, ?) " +
+                             "ON DUPLICATE KEY UPDATE DailyDepositLimit = VALUES(DailyDepositLimit)";
+
+        try (Connection connection = getDatabaseConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(updateQuery)) {
+
+            preparedStatement.setString(1, AccountNumber);
+            preparedStatement.setDouble(2, DailyDepositLimit);
+
+            preparedStatement.executeUpdate();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public static void updateWithdrawal(String AccountNumber, double currWithdrawalLimit) {
+
+        double DailyWithdrawalLimit = currWithdrawalLimit;
+
+        String updateQuery = "INSERT INTO DailyLimits (AccountNumber, DailyWithdrawalLimit) " + "VALUES (?, ?) " + "ON DUPLICATE KEY UPDATE DailyWithdrawalLimit = VALUES(DailyWithdrawalLimit)";
+
+
+        try (Connection connection = getDatabaseConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(updateQuery)) {
+
+            preparedStatement.setString(1, AccountNumber);
+            preparedStatement.setDouble(2, DailyWithdrawalLimit);
+            preparedStatement.executeUpdate();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Method to retrieve deposit and withdrawal limits for an account
+    public static double retrieveDeposit(String accountNumber) {
+        String retrieveQuery = "SELECT DailyDepositLimit FROM DailyLimits WHERE AccountNumber = ?";
+
+        try (Connection connection = getDatabaseConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(retrieveQuery)) {
+
+            preparedStatement.setString(1, accountNumber);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            if (resultSet.next()) {
+                                
+                double DailyDepositLimit = resultSet.getDouble("DailyDepositLimit");
+
+                System.out.println("Account Number: " + accountNumber);
+                System.out.println("Inside Retrieve Deposit Limit: $" + DailyDepositLimit);
+
+                return DailyDepositLimit;
+
+
+
+            } else {
+                System.out.println("Limits not found for account: " + accountNumber);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
+
+    // Method to retrieve deposit and withdrawal limits for an account
+    public static double retrieveWithdrawal(String accountNumber) {
+        String retrieveQuery = "SELECT DailyWithdrawalLimit FROM DailyLimits WHERE AccountNumber = ?";
+
+        try (Connection connection = getDatabaseConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(retrieveQuery)) {
+
+            preparedStatement.setString(1, accountNumber);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            if (resultSet.next()) {
+                
+                double DailyWithdrawalLimit = resultSet.getDouble("DailyWithdrawalLimit");
+                
+                System.out.println("Account Number: " + accountNumber);
+                System.out.println("In retrieve Withdrawal Limit: $" + DailyWithdrawalLimit);
+
+                return DailyWithdrawalLimit;
+
+
+            } else {
+                System.out.println("In retreive : Limits not found for account: " + accountNumber);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
+
+    private static Connection getDatabaseConnection()
+    {
+        try {
+        // Open a connection
+        connection = DriverManager.getConnection(JDBC_URL, USERNAME, PASSWORD);
+        return connection;
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
 
